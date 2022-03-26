@@ -11,22 +11,28 @@ import os
 #%%
 os.chdir(r"C:\Users\mig_s\OneDrive\Documentos\GitHub\IC")
 
+ibge = pd.read_excel(r"RELATORIO_DTB_BRASIL_MUNICIPIO.xls")
+
+ibge["Município"]= ibge["Nome_Município"].apply(lambda x: x.upper())
+ibge = ibge[["Nome_UF", "Código Município Completo", "Município"]]
+
 position = pd.read_excel("Posições.xlsx")
 posi_dict =  position.to_dict()
 
 years = ['Município'] + list(range(1991, 2013)) + ['Total']
 
 #%%
-file_1 = "PA.pdf"
+file_1 = "SP.pdf"
 cs=pdfplumber.open(file_1)
 data = pd.DataFrame()
-p_tab = cs.pages[33:34]
+p_tab = cs.pages[33:35]
 for i in range(len(p_tab)):
     table= p_tab[i].extract_table()
     [row.pop() for row in table]
     df=pd.DataFrame(table[2:], columns= years).replace('', 0)
     data = data.append(df, True)
-
+temp= ibge[ibge["Nome_UF"] == "São Paulo"]
+data.merge(temp, on="Município")
 #%%
 data = dict()
 for i in range(26):
@@ -54,6 +60,8 @@ for i in range(26):
                         [row.pop() for row in table]
                     df_sub = pd.DataFrame(table[2:], columns= years).replace('', 0)
                     df = df.append(df_sub, True)
+            temp= ibge[ibge["Nome_UF"] == posi_dict["Estado"][i]]
+            df = df.merge(temp, on = "Município")
             #name = posi_dict["Estado"][i] + "_" + j
             data_1[j] = df
     data[posi_dict["Estado"][i]] = data_1
