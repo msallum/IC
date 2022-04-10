@@ -1,0 +1,4 @@
+gen pnad_code=substr(id_dom,5,8)
+replace pnad_code=substr(id_dom,3,8) if year<=1999
+destring pnad_code, replace
+merge m:1 pnad_code using "PNAD/muni_code95.dta", keep(3) nogen

@@ -9,7 +9,7 @@ import pandas as pd
 import pdfplumber
 import os
 #%%
-os.chdir(r"C:\Users\mig_s\OneDrive\Documentos\GitHub\IC")
+os.chdir(r"C:\Users\mig_s\OneDrive\Documents\Dados IC")
 
 ibge = pd.read_excel(r"RELATORIO_DTB_BRASIL_MUNICIPIO.xls")
 
@@ -22,18 +22,7 @@ posi_dict =  position.to_dict()
 
 years = ['Município'] + list(range(1991, 2013)) + ['Total']
 
-#%%
-file_1 = "PA.pdf"
-cs=pdfplumber.open(file_1)
-data = pd.DataFrame()
-p_tab = cs.pages[43:44]
-for i in range(len(p_tab)):
-    table= p_tab[i].extract_table()
-    [row.pop() for row in table]
-    df=pd.DataFrame(table[2:], columns= years).replace('', 0)
-    data = data.append(df, True)
-temp= ibge[ibge["Nome_UF"] == "São Paulo"]
-data.merge(temp, on="Município")
+
 #%%
 data_2 = dict()
 for i in range(26):
@@ -64,7 +53,7 @@ for i in range(26):
             elif pd.isnull(posi_dict[j][i]):
                 df = pd.DataFrame(columns= years)
             temp= ibge[ibge["Nome_UF"] == posi_dict["Estado"][i]]
-            df = pd.to_numeric(df)
+            #df = pd.to_numeric(df)
             #name = posi_dict["Estado"][i] + "_" + j
             data_1[j] = df.merge(temp, how = "outer" , on = "Município")
     data_2[posi_dict["Estado"][i]] = data_1
@@ -81,6 +70,6 @@ for j in data_2['Acre'].keys():
        
 #%%
 
-with pd.ExcelWriter(r'Dados limpos/Dados_limpos.xlsx') as writer:
+with pd.ExcelWriter(r'Dados limpos/Desastres.xlsx') as writer:
     for i in data.keys():
         data[i].to_excel(writer, sheet_name=i)
