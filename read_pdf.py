@@ -9,6 +9,7 @@ Created on Tue Apr 12 15:23:15 2022
 #PARANÁ ESTIAGEM E SECA TÁ CAGADO
 #PG50 MARANHÃO TBM
 #BAHIA INUNDAÇÃO
+#ESTIAGEM QUARAÍ(RIO GRANDE DO SUL)
 import pandas as pd
 import pdfplumber
 import os
@@ -58,13 +59,29 @@ for i in range(26):
                     p_tab = cs.pages[pg[0]:pg[1]]
                     df = pd.DataFrame()
                     for k in range(len(p_tab)):
-                        if posi_dict["pdf"][i] == "MA" and k == 39:
-                            df_sub = pd.read_excel() 
-                        else:
-                            table= p_tab[k].extract_table()
-                            if len(table[0]) > 24:
-                                [row.pop() for row in table]
-                            df_sub = pd.DataFrame(table[2:], columns= years).replace('', 0)
+                        #if posi_dict["pdf"][i] == "PR" and j=="Estiagem e Seca" and k == (39-pg[0]):
+                         #   df_sub = pd.read_excel("PR 39.xlsx") #incompleto
+                        #elif posi_dict["pdf"][i] == "MA" and j=="Enxurrada" and k == (50-pg[0]):
+                         #   print("chegou aqui")
+                          #  df_sub = pd.read_excel("MA 50.xlsx") 
+                        #else:
+                        table= p_tab[k].extract_table()
+                        if len(table[0]) > 24:
+                            [row.pop() for row in table]
+                        df_sub = pd.DataFrame(table[2:], columns= years).replace('', 0)
+                        df = df.append(df_sub, True)
+                    if posi_dict["pdf"][i] == "PR" and j=="Estiagem e Seca":
+                        check= df
+                        print(check)
+                        sta = df[df["Município"]=="CAPANEMA"].index[0] + 1
+                        end = df[df["Município"]=="IBEMA"].index[0]
+                        print(sta, end)
+                        df.drop(df.index[sta:end], inplace= True)
+                        df_sub = pd.read_excel("PR 39.xlsx")
+                        df = df.append(df_sub, True)
+                    if posi_dict["pdf"][i] == "MA" and j=="Enxurrada":
+                        df.drop(df.tail(1).index, inplace= True)
+                        df_sub = pd.read_excel("MA 50.xlsx") 
                         df = df.append(df_sub, True)
                 elif pd.isnull(posi_dict[j][i]):
                     df = pd.DataFrame(columns= years)
@@ -149,11 +166,13 @@ for j in data_2['Acre'].keys():
     for i in data_2.keys():
         des = des.append(data_2[i][j], True)
     des = des.drop(des[des['match'].str.isnumeric().fillna(True)].index)
-    des[list(range(1991, 2013))] = des[list(range(1991, 2013))].apply(pd.to_numeric)
-    data[j] = des.fillna(0)
+    des.drop(des[des['Município'] == 'Município'].index, inplace = True)
+    des[list(range(1991, 2013))+["Total"]] = des[list(range(1991, 2013))+["Total"]].apply(pd.to_numeric)
+    des["DIF"] = des[list(range(1991, 2013))].sum(axis = 1) -des["Total"]
+    data[j] = des.fillna(0).drop_duplicates()
        
 #%%
 
-with pd.ExcelWriter(r'Dados limpos/Testes_1.xlsx') as writer:
+with pd.ExcelWriter(r'Dados limpos/Desastres.xlsx') as writer:
     for i in data.keys():
         data[i].to_excel(writer, sheet_name=i)
