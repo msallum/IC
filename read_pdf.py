@@ -110,6 +110,9 @@ for i in data_2.keys():
         mat3 = []
         mat4 = []
         mat5 = []
+        mat6 = []
+        mat7 = []
+        mat8 = []
         p = []
         p1 = []
     
@@ -128,34 +131,47 @@ for i in data_2.keys():
         # it's closest match from list2
         for k in list1:
             mat1.append(process.extract(k, list2, limit=2))
-            mat2.append(process.extractOne(k, list2))
+            mat2.append(process.extractOne(k, list2, scorer = fuzz.ratio))
+            mat3.append(process.extractOne(k, list2))
         data_2[i][j]['matches'] = mat1
-        data_2[i][j]['match'] = mat2
+        data_2[i][j]['ratio'] = mat2
+        data_2[i][j]['match'] = mat3
           
         # iterating through the closest matches
         # to filter out the maximum closest match
         for f in data_2[i][j]['matches']:
             for k in f:
                 p.append(k[0])
-            mat3.append(",".join(p))
+            mat4.append(",".join(p))
             p = []
             
         for k in data_2[i][j]['match']:
             if k[1] >= threshold:
-                mat4.append(k[0])
-                mat5.append(k[1])
+                mat5.append(k[0])
+                mat6.append(k[1])
             else:
-                mat4.append(0)
                 mat5.append(0)
+                mat6.append(0)
+        
+        for k in data_2[i][j]['ratio']:
+            if k[1] >= threshold:
+                mat7.append(k[0])
+                mat8.append(k[1])
+            else:
+                mat7.append(0)
+                mat8.append(0)
             
 
             
           
         # storing the resultant matches back to dframe1
-        data_2[i][j]['matches'] = mat3
-        data_2[i][j]['match'] = mat4
-        data_2[i][j]['fit'] = mat5
+        data_2[i][j]['matches'] = mat4
+        data_2[i][j]['match'] = mat5
+        data_2[i][j]['fit_match'] = mat6
+        data_2[i][j]['ratio'] = mat7
+        data_2[i][j]['fit_ratio'] = mat8
         data_2[i][j]['Nome_UF'] = i
+        data_2[i][j]['Nome_UF'] = (data_2[i][j]['match']==data_2[i][j]['ratio'])
         #data_2[i][j] = data_2[i][j].merge(temp, how = "left", on=('match', 'Nome_UF'))
 
 
@@ -173,6 +189,6 @@ for j in data_2['Acre'].keys():
        
 #%%
 
-with pd.ExcelWriter(r'Dados limpos/Desastres.xlsx') as writer:
+with pd.ExcelWriter(r'Dados limpos/Desastres1.xlsx') as writer:
     for i in data.keys():
         data[i].to_excel(writer, sheet_name=i)
