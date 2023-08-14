@@ -5,17 +5,18 @@ library(magrittr)
 library(dtplyr)
 library(ggplot2)
 library(fixest)
-library(DIDmultiplegt)
+library(fastDummies)
 
 
 setwd("C:/Users/mig_s/OneDrive/Documents/Dados IC")
 base <- read_dta("Dados Limpos/base")
 amc <- as_tibble(read_dta("amcs1991.dta"))
+pop <- read.csv("muni_pop.csv")
 
 file.list <- list.files("s2id")
 
 numbers_only <- function(x) !grepl("\\D", x)
-m<-names(read_excel("AC_2006.xls"))
+m<-names(read_excel("S2id/AC_2006.xls"))
 read_x <- function(x){
   y = read_excel(x)
   if(length(y)<13){
@@ -65,7 +66,7 @@ temp%>%
   left_join(amc, by=c("cod2010")) -> base1
 base1%<>%
   group_by(ano, amc) %>%
-  summarise(SE = min(SE),
+  summarise(SE = max(SE),
             ECP = max(ECP))%>%
   ungroup()
 
@@ -74,21 +75,26 @@ dados<-
   mutate(across(c(SE, ECP), ~replace(., is.na(.), 0)))
 
 dados%>%
-  filter(ano<2011)%>%
-  group_by(amc) %>%
-  mutate(l1 = lag(ECP, 1),
-         l2 = lag(ECP, 2),
-         l3 = lag(ECP, 3),
-         l4 = lag(ECP, 4),
-         f1 = lead(ECP, 1),
-         f2 = lead(ECP, 2),
-         f3 = lead(ECP, 3),
-         f4 = lead(ECP, 4))%>%
-  ungroup() %>%
-  feols(outmigration ~ f4 +f3+f2+ECP+l1+l2+l3+l4| amc + ano, data = .) %>%
-  coefplot()
+  select(-c(mesorregiao_geografica, microrregiao_geografica, regiao_geografica_imediata, regiao_geografica_intermediaria)) %>%
+  distinct() ->temp
 
+pop%>%
+  mutate(cod2010 = as.numeric(substring(id_municipio,1, 
+                                        nchar(id_municipio)-1))) %>%
+  left_join(amc, by=c("cod2010"))%>%
+  group_by(ano, amc)%>%
+  summarise(populacao = sum(populacao))%>%
+  ungroup()%>%
+  distinct()%>%
+  right_join(temp, by=c("ano", "amc"))->dados1
+  
+dados1%>%
+  mutate(mig_pct = outmigration/populacao*100)->dados2
+  
+write_dta(janitor::clean_names(dados2), "Dados Limpos/dados1.dta", )
 
-
-
-
+#fazer outmigration per capita
+#PROBLEMA NO COLAPSO POR AMC
+#PNAD
+#ecp e se discriminados
+check<- read_dta("Dados Limpos/dados1.dta")
